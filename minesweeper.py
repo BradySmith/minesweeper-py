@@ -2,29 +2,31 @@ import sys
 import pygame
 from random import randint
 
+# Game Variables
 GRID_SIZE = 15
 CELL_SIZE = 20
 MINE_COUNT = 20
 
+# Calculated Variables for Setup
 MAX_Y = GRID_SIZE * CELL_SIZE
 MIN_Y = 0
-
 MAX_X = GRID_SIZE * CELL_SIZE
 MIN_X = 0
- 
+
+# Defined Colours 
 black   = (   0,   0,   0)
 white   = ( 255, 255, 255)
 blue    = ( 100, 149, 237)
 
+# Various 2d arrays used to track the status of the game
 Cells = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 Cells_Colour = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 Mines = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 
+# Boilerplate for Pygame
 pygame.init()
-
 size = [MAX_X, MAX_Y]
-screen = pygame.display.set_mode(size)
- 
+screen = pygame.display.set_mode(size) 
 pygame.display.set_caption("Minesweeper")
 
 """ Intialize Minefield
@@ -79,6 +81,8 @@ def drawGrid(size):
         x += CELL_SIZE
         y += CELL_SIZE
 
+""" Displays the passed in character at the given point on the grid
+""" 
 def displayChar(inChar, x, y):
     char = inChar
     if (inChar == -1):
@@ -89,6 +93,22 @@ def displayChar(inChar, x, y):
     rect.center = Cells[x][y].center
     screen.blit(renderChar, rect)
 
+""" Is called on a mouseclick and figures out what to put where
+       Basically if mouseclick detected get the position and use
+       integer division to change the block colour and set the appropriate
+       character
+""" 
+def gridClicked(pos):
+    mouse_x = pos[0]
+    mouse_y = pos[1]
+    mouse_x = mouse_x // CELL_SIZE
+    mouse_y = mouse_y // CELL_SIZE
+    drawCells(GRID_SIZE, mouse_x, mouse_y)
+    drawGrid(GRID_SIZE)
+    displayChar(Mines[mouse_x][mouse_y], mouse_x, mouse_y)   
+
+""" Main method
+""" 
 def main():
     screen.fill(white)
     intializeCells(GRID_SIZE)
@@ -99,16 +119,9 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
-            # If mouseclick detected get the position and use integer division to change the block colour 
             elif event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
-                mouse_x = pos[0]
-                mouse_y = pos[1]
-                mouse_x = mouse_x // CELL_SIZE
-                mouse_y = mouse_y // CELL_SIZE
-                drawCells(GRID_SIZE, mouse_x, mouse_y)
-                drawGrid(GRID_SIZE)
-                displayChar(Mines[mouse_x][mouse_y], mouse_x, mouse_y)
+                gridClicked(pos)
         pygame.display.flip() 
     pygame.quit()
 
