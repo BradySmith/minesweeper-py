@@ -5,7 +5,7 @@ from random import randint
 # Game Variables
 GRID_SIZE = 15
 CELL_SIZE = 20
-MINE_COUNT = 90
+MINE_COUNT = 40
 
 # Calculated Variables for Setup
 MAX_Y = GRID_SIZE * CELL_SIZE
@@ -25,6 +25,7 @@ red     = ( 255, 0, 0)
 Cells = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 Cells_Colour = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 Mines = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+Clicked = [[False for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 
 # Boilerplate for Pygame
 pygame.init()
@@ -65,7 +66,6 @@ def seedMines(size):
                 if (y != MAX_YROW and x != MIN_X):
                     Mines[x-1][y+1] = Mines[x-1][y+1] + 1
 
-
 """ Intialize all Cells to their starting value
        * Set all cell colours to blue
        * Set all touples in a 2d array
@@ -80,6 +80,7 @@ def intializeCells(size):
             Cells_Colour[col][row] = blue
             pygame.draw.rect(screen, Cells_Colour[col][row], Cells[col][row])
             cell_x += CELL_SIZE
+            Clicked[col][row] = False 
         cell_y += CELL_SIZE
 
 """ Draw the cell we just passed in using the generated values and colours
@@ -106,7 +107,9 @@ def drawGrid(size):
 def displayChar(inChar, x, y):
     char = inChar
     if (inChar > 8):
-        char = "@"
+        char = "*"
+    if (inChar == 0):
+        char = " "
     myFont = pygame.font.SysFont("None", 25)
     renderChar = myFont.render(str(char), 0, (black))
     rect = renderChar.get_rect()
@@ -122,29 +125,58 @@ def mineHit(x, y, grid):
     drawGrid(GRID_SIZE)
     displayChar(grid, x, y)
 
-def blankHit(x, y, grid):
+def blankHit(x, y):
+    grid = Mines[x][y]
     setGridColor(x, y, white) 
     drawCells(GRID_SIZE, x, y)
     drawGrid(GRID_SIZE)
-    displayChar(grid, x, y)   
+    displayChar(grid, x, y)
+    gridClicked(x-1, y)
+    gridClicked(x+1, y)
+    gridClicked(x, y+1)
+    gridClicked(x, y-1)
+    gridClicked(x-1, y-1)
+    gridClicked(x+1, y+1)
+    gridClicked(x-1, y+1)
+    gridClicked(x+1, y-1)
 
+def clueHit(x, y):
+    grid = Mines[x][y]
+    setGridColor(x, y, white) 
+    drawCells(GRID_SIZE, x, y)
+    drawGrid(GRID_SIZE)
+    displayChar(grid, x, y)
+
+def mouseHandler(pos):
+    mouse_x = pos[0]
+    mouse_y = pos[1]
+    mouse_x = mouse_x // CELL_SIZE
+    mouse_y = mouse_y // CELL_SIZE
+    gridClicked(mouse_x, mouse_y) 
 
 """ Is called on a mouseclick and figures out what to put where
        Basically if mouseclick detected get the position and use
        integer division to change the block colour and set the appropriate
        character
 """ 
-def gridClicked(pos):
-    mouse_x = pos[0]
-    mouse_y = pos[1]
-    mouse_x = mouse_x // CELL_SIZE
-    mouse_y = mouse_y // CELL_SIZE
-    grid = Mines[mouse_x][mouse_y]
-    if (grid > 8):
-        mineHit(mouse_x, mouse_y, grid)
+def gridClicked(mouse_x, mouse_y):
+    if (mouse_x > MAX_XCOL or mouse_x < MIN_X):
+        return
+    if (mouse_y > MAX_YROW or mouse_y < MIN_Y):
+        return
+    revealed = Clicked[mouse_x][mouse_y] 
+    if (revealed == True):
+        return
     else:
-        blankHit(mouse_x, mouse_y, grid)
-        
+        Clicked[mouse_x][mouse_y] = True
+        grid = Mines[mouse_x][mouse_y]
+        if (grid > 8):
+            mineHit(mouse_x, mouse_y, grid)
+        elif (grid == 0):
+            blankHit(mouse_x, mouse_y)
+        else:
+            clueHit(mouse_x, mouse_y) 
+            
 """ Main method
 """ 
 def main():
@@ -159,7 +191,7 @@ def main():
                 done = True
             elif event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
-                gridClicked(pos)
+                mouseHandler(pos)
         pygame.display.flip() 
     pygame.quit()
 
