@@ -41,13 +41,13 @@ def seedMines(size):
         mine_x = mine // GRID_SIZE
         temp = mine_x * GRID_SIZE
         mine_y = mine - temp
-        if ( Mines[mine_x][mine_y] != -1):
-            Mines[mine_x][mine_y] = -1
+        if ( Mines[mine_x][mine_y] == 0):
+            Mines[mine_x][mine_y] = 9 
         else:
             i = i-1
     for x in range(0, size):
         for y in range(0, size):
-            if (Mines[x][y] == -1):
+            if (Mines[x][y] > 8):
                 if (x != MIN_X):
                     Mines[x-1][y] = Mines[x-1][y] + 1
                 if (x != MAX_XCOL):
@@ -56,6 +56,15 @@ def seedMines(size):
                     Mines[x][y-1] = Mines[x][y-1] + 1
                 if (y != MAX_YROW):
                     Mines[x][y+1] = Mines[x][y+1] + 1
+                if (y != MIN_Y and x != MIN_X):
+                    Mines[x-1][y-1] = Mines[x-1][y-1] + 1
+                if (y != MAX_YROW and x != MAX_XCOL):
+                    Mines[x+1][y+1] = Mines[x+1][y+1] + 1
+                if (y != MIN_Y and x != MAX_XCOL):
+                    Mines[x+1][y-1] = Mines[x+1][y-1] + 1
+                if (y != MAX_YROW and x != MIN_X):
+                    Mines[x-1][y+1] = Mines[x-1][y+1] + 1
+
 
 """ Intialize all Cells to their starting value
        * Set all cell colours to blue
@@ -96,7 +105,7 @@ def drawGrid(size):
 """ 
 def displayChar(inChar, x, y):
     char = inChar
-    if (inChar == -1):
+    if (inChar > 8):
         char = "@"
     myFont = pygame.font.SysFont("None", 25)
     renderChar = myFont.render(str(char), 0, (black))
@@ -131,7 +140,7 @@ def gridClicked(pos):
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
     grid = Mines[mouse_x][mouse_y]
-    if (grid == -1):
+    if (grid > 8):
         mineHit(mouse_x, mouse_y, grid)
     else:
         blankHit(mouse_x, mouse_y, grid)
