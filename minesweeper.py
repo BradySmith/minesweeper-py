@@ -5,18 +5,21 @@ from random import randint
 # Game Variables
 GRID_SIZE = 15
 CELL_SIZE = 20
-MINE_COUNT = 20
+MINE_COUNT = 90
 
 # Calculated Variables for Setup
 MAX_Y = GRID_SIZE * CELL_SIZE
 MIN_Y = 0
 MAX_X = GRID_SIZE * CELL_SIZE
 MIN_X = 0
+MAX_XCOL = GRID_SIZE - 1
+MAX_YROW = GRID_SIZE - 1
 
 # Defined Colours 
 black   = (   0,   0,   0)
 white   = ( 255, 255, 255)
 blue    = ( 100, 149, 237)
+red     = ( 255, 0, 0)
 
 # Various 2d arrays used to track the status of the game
 Cells = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
@@ -42,6 +45,17 @@ def seedMines(size):
             Mines[mine_x][mine_y] = -1
         else:
             i = i-1
+    for x in range(0, size):
+        for y in range(0, size):
+            if (Mines[x][y] == -1):
+                if (x != MIN_X):
+                    Mines[x-1][y] = Mines[x-1][y] + 1
+                if (x != MAX_XCOL):
+                    Mines[x+1][y] = Mines[x+1][y] + 1
+                if (y != MIN_Y):
+                    Mines[x][y-1] = Mines[x][y-1] + 1
+                if (y != MAX_YROW):
+                    Mines[x][y+1] = Mines[x][y+1] + 1
 
 """ Intialize all Cells to their starting value
        * Set all cell colours to blue
@@ -59,15 +73,12 @@ def intializeCells(size):
             cell_x += CELL_SIZE
         cell_y += CELL_SIZE
 
-""" Draw cells using the generated values and colours
+""" Draw the cell we just passed in using the generated values and colours
 """
 def drawCells(size, x, y):
     for row in range(0, size):
         for col in range(0, size):
-            if (Cells_Colour[col][row] != white):
-                pygame.draw.rect(screen, Cells_Colour[col][row], Cells[col][row])
             if (row == y and col == x):
-                Cells_Colour[col][row] = white
                 pygame.draw.rect(screen, Cells_Colour[col][row], Cells[col][row])
 
 """ Draw a grid over all the cells
@@ -93,6 +104,22 @@ def displayChar(inChar, x, y):
     rect.center = Cells[x][y].center
     screen.blit(renderChar, rect)
 
+def setGridColor(x, y, color):
+    Cells_Colour[x][y] = color
+
+def mineHit(x, y, grid):
+    setGridColor(x, y, red) 
+    drawCells(GRID_SIZE, x, y)
+    drawGrid(GRID_SIZE)
+    displayChar(grid, x, y)
+
+def blankHit(x, y, grid):
+    setGridColor(x, y, white) 
+    drawCells(GRID_SIZE, x, y)
+    drawGrid(GRID_SIZE)
+    displayChar(grid, x, y)   
+
+
 """ Is called on a mouseclick and figures out what to put where
        Basically if mouseclick detected get the position and use
        integer division to change the block colour and set the appropriate
@@ -103,10 +130,12 @@ def gridClicked(pos):
     mouse_y = pos[1]
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
-    drawCells(GRID_SIZE, mouse_x, mouse_y)
-    drawGrid(GRID_SIZE)
-    displayChar(Mines[mouse_x][mouse_y], mouse_x, mouse_y)   
-
+    grid = Mines[mouse_x][mouse_y]
+    if (grid == -1):
+        mineHit(mouse_x, mouse_y, grid)
+    else:
+        blankHit(mouse_x, mouse_y, grid)
+        
 """ Main method
 """ 
 def main():
