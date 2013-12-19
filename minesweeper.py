@@ -14,8 +14,7 @@ from random import randint
 # Game Variables
 GRID_SIZE = 15
 CELL_SIZE = 20
-MINE_COUNT = 40
-
+MINE_COUNT = 20
 # Calculated Variables for Setup
 MAX_SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE
 MIN_SCREEN_HEIGHT = 0
@@ -40,7 +39,7 @@ grey    = ( 128, 128, 128)
 Cells_Rects = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 Cells_Colour = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 Minefield = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
-Revealed_Cells = [[False for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+Revealed_Cells = [[1 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
 
 # Boilerplate for Pygame
 pygame.init()
@@ -97,25 +96,26 @@ def intializeCells(size):
             Cells_Colour[col][row] = blue
             pygame.draw.rect(screen, Cells_Colour[col][row], Cells_Rects[col][row])
             cell_x += CELL_SIZE
-            Revealed_Cells[col][row] = False 
+            Revealed_Cells[col][row] = 1 
         cell_y += CELL_SIZE
 
 """ 
     Draw the cell we just passed in using the generated values and colours
 """
-def drawCells(size, x, y):
-    for row in range(0, size):
-        for col in range(0, size):
+def drawCells(x, y):
+    for row in range(0, GRID_SIZE):
+        for col in range(0, GRID_SIZE):
             if (row == y and col == x):
                 pygame.draw.rect(screen, Cells_Colour[col][row], Cells_Rects[col][row])
+    drawGrid()
 
 """ 
     Draw a grid over all the cells
 """            
-def drawGrid(size):
+def drawGrid():
     x = CELL_SIZE
     y = CELL_SIZE
-    for row in range(0, size):
+    for row in range(0, GRID_SIZE):
         pygame.draw.line(screen, black, (x, MAX_SCREEN_HEIGHT), (x, MIN_SCREEN_HEIGHT) )
         pygame.draw.line(screen, black, (MIN_SCREEN_WIDTH, y), (MAX_SCREEN_WIDTH, y) )
         x += CELL_SIZE
@@ -130,25 +130,29 @@ def displayChar(inChar, x, y):
         char = "*"
     if (inChar == 0):
         char = " "
-    myFont = pygame.font.SysFont("None", 25)
+
     if (inChar == 1):
-        renderChar = myFont.render(str(char), 0, (darkblue))
+        renderChar(char, darkblue, x, y)
     elif (inChar == 2):
-        renderChar = myFont.render(str(char), 0, (green))
+        renderChar(char, green, x, y)
     elif (inChar == 3):
-        renderChar = myFont.render(str(char), 0, (red))
+        renderChar(char, red, x, y)
     elif (inChar == 4):
-        renderChar = myFont.render(str(char), 0, (purple))
+        renderChar(char, purple, x, y)
     elif (inChar == 5):
-        renderChar = myFont.render(str(char), 0, (darkred))
+        renderChar(char, darkred, x, y)
     elif (inChar == 6):
-        renderChar = myFont.render(str(char), 0, (iceblue))
+        renderChar(char, iceblue, x, y)
     elif (inChar == 7):
-        renderChar = myFont.render(str(char), 0, (black))
+        renderChar(char, black, x, y)
     elif (inChar == 8):
-        renderChar = myFont.render(str(char), 0, (grey))
+        renderChar(char, grey, x, y)
     else:
-        renderChar = myFont.render(str(char), 0, (white))
+        renderChar(char, white, x, y)
+    
+def renderChar(inChar, colour, x, y):
+    myFont = pygame.font.SysFont("None", 25)
+    renderChar = myFont.render(str(inChar), 0, (colour))
     rect = renderChar.get_rect()
     rect.center = Cells_Rects[x][y].center
     screen.blit(renderChar, rect)
@@ -164,8 +168,7 @@ def setGridColor(x, y, color):
 """ 
 def mineWasHit(x, y, grid):
     setGridColor(x, y, red) 
-    drawCells(GRID_SIZE, x, y)
-    drawGrid(GRID_SIZE)
+    drawCells(x, y)
     displayChar(grid, x, y)
 
 """ 
@@ -174,8 +177,7 @@ def mineWasHit(x, y, grid):
 def blankGridWasHit(x, y):
     grid = Minefield[x][y]
     setGridColor(x, y, white) 
-    drawCells(GRID_SIZE, x, y)
-    drawGrid(GRID_SIZE)
+    drawCells(x, y)
     displayChar(grid, x, y)
     
     # Cascade to all neighbour squares
@@ -194,19 +196,31 @@ def blankGridWasHit(x, y):
 def proximityGridWasHit(x, y):
     grid = Minefield[x][y]
     setGridColor(x, y, white) 
-    drawCells(GRID_SIZE, x, y)
-    drawGrid(GRID_SIZE)
+    drawCells(x, y)
     displayChar(grid, x, y)
 
 """ 
-    Function that  pulls apart the mouse input and assigns it to the correct function
+    Function that pulls apart the mouse input and assigns it to the correct function
+    on left button click
 """
-def mouseHandler(pos):
+def leftMouseButton(pos):
     mouse_x = pos[0]
     mouse_y = pos[1]
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
-    gridClicked(mouse_x, mouse_y) 
+    gridClicked(mouse_x, mouse_y)
+    
+""" 
+    Function that pulls apart the mouse input and assigns it to the correct function
+    on right button click
+"""
+def rightMouseButton(pos):
+    print("rightmousebutton")
+    mouse_x = pos[0]
+    mouse_y = pos[1]
+    mouse_x = mouse_x // CELL_SIZE
+    mouse_y = mouse_y // CELL_SIZE
+    gridMarked(mouse_x, mouse_y)
 
 """ 
     Function that returns whether or not a row has been revealed or not
@@ -221,25 +235,46 @@ def coordinateIsOutOfBounds(x, y):
     return x > MAX_COL_COUNT or x < MIN_SCREEN_WIDTH or y > MAX_ROW_COUNT or y < MIN_SCREEN_HEIGHT
 
 """ 
-    Is called on a mouseclick and figures out what to put where
-       Basically if mouseclick detected get the position and use
-       integer division to change the block colour and set the appropriate
-       character
+    Is called on a left mouseclick - uses integer division to figure out which grid to access
+    and then change the block colour and set the appropriate character
 """ 
 def gridClicked(x, y):
     if (coordinateIsOutOfBounds(x, y)):
         return
-    elif (coordinateIsRevealed(x, y)):
+    elif (coordinateIsRevealed(x, y) != 1):
         return
     else:
-        Revealed_Cells[x][y] = True
+        Revealed_Cells[x][y] = 0
         grid = Minefield[x][y]
         if (grid > 8):
             mineWasHit(x, y, grid)
         elif (grid == 0):
             blankGridWasHit(x, y)
         else:
-            proximityGridWasHit(x, y) 
+            proximityGridWasHit(x, y)
+
+""" 
+    Is called on a right mouseclick - allows the user to mark a grid
+"""   
+def gridMarked(x, y):
+    print("gridmarked")
+    if (coordinateIsOutOfBounds(x, y)):
+        return
+    else:
+        if (Revealed_Cells[x][y] == 0):     # Grid has been revealed already so we can't do anything to it
+            return
+        elif (Revealed_Cells[x][y] == 1):   # Grid doesn't have anything on it so let's mark it - !
+            drawCells(x, y)
+            renderChar("!", black, x, y)
+            Revealed_Cells[x][y] = 2
+        elif (Revealed_Cells[x][y] == 2):   # Grid has been marked let's change it to a questionable - ?
+            drawCells(x, y)
+            renderChar("?", black, x, y)
+            Revealed_Cells[x][y] = 3
+        elif (Revealed_Cells[x][y] == 3):   # Grid has been marked questionable so let's set it back to a blank
+            drawCells(x, y)
+            renderChar(" ", black, x, y)
+            Revealed_Cells[x][y] = 1
             
 """ 
     Main method
@@ -248,7 +283,7 @@ def main():
     screen.fill(white)
     intializeCells(GRID_SIZE)
     seedMines(GRID_SIZE)
-    drawGrid(GRID_SIZE)
+    drawGrid()
     done = False
     while done==False:
         for event in pygame.event.get():
@@ -256,8 +291,12 @@ def main():
                 done = True
             elif event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
-                mouseHandler(pos)
-        pygame.display.flip() 
+                if event.button == 1:   # Left button click detected
+                    leftMouseButton(pos)
+                elif event.button == 3: # Right button click detected
+                    rightMouseButton(pos)    
+        pygame.display.flip()
+        pygame.time.delay(100) 
     pygame.quit()
 
 if __name__ == '__main__':
