@@ -27,8 +27,14 @@ MAX_ROW_COUNT = GRID_SIZE - 1
 # Defined Colours 
 black   = (   0,   0,   0)
 white   = ( 255, 255, 255)
+green   = (   0, 100,   0)
 blue    = ( 100, 149, 237)
+darkblue =(   0,   0, 205)
 red     = ( 255,   0,   0)
+purple  = (  25,  25, 112)
+darkred = ( 102,   0,   0)
+iceblue = (   0, 204, 204)
+grey    = ( 128, 128, 128)
 
 # Various 2d arrays used to track the status of the game
 Cells_Rects = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
@@ -125,7 +131,24 @@ def displayChar(inChar, x, y):
     if (inChar == 0):
         char = " "
     myFont = pygame.font.SysFont("None", 25)
-    renderChar = myFont.render(str(char), 0, (black))
+    if (inChar == 1):
+        renderChar = myFont.render(str(char), 0, (darkblue))
+    elif (inChar == 2):
+        renderChar = myFont.render(str(char), 0, (green))
+    elif (inChar == 3):
+        renderChar = myFont.render(str(char), 0, (red))
+    elif (inChar == 4):
+        renderChar = myFont.render(str(char), 0, (purple))
+    elif (inChar == 5):
+        renderChar = myFont.render(str(char), 0, (darkred))
+    elif (inChar == 6):
+        renderChar = myFont.render(str(char), 0, (iceblue))
+    elif (inChar == 7):
+        renderChar = myFont.render(str(char), 0, (black))
+    elif (inChar == 8):
+        renderChar = myFont.render(str(char), 0, (grey))
+    else:
+        renderChar = myFont.render(str(char), 0, (white))
     rect = renderChar.get_rect()
     rect.center = Cells_Rects[x][y].center
     screen.blit(renderChar, rect)
