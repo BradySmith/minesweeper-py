@@ -50,7 +50,7 @@ pygame.display.set_caption("Minesweeper")
 """
 Initializes the minefield and sets the proximity values of all grids
 """
-def seedMines(size):
+def seedMines():
     # TODO: Calculate proximity to mines
     for i in range(0, MINE_COUNT):
         mine = randint(0,((GRID_SIZE*GRID_SIZE)-1))
@@ -61,8 +61,8 @@ def seedMines(size):
             Minefield[mine_x][mine_y] = 9 
         else:
             i = i-1
-    for x in range(0, size):
-        for y in range(0, size):
+    for x in range(0, GRID_SIZE):
+        for y in range(0, GRID_SIZE):
             if (Minefield[x][y] > 8):
                 if (x != MIN_SCREEN_WIDTH):
                     Minefield[x-1][y] = Minefield[x-1][y] + 1
@@ -86,12 +86,12 @@ Intialize all Cells_Rects to their starting value
     * Set all cell colours to blue
     * Set all touples in a 2d array
 """
-def intializeCells(size):
+def intializeCells():
     cell_x = 0
     cell_y = 0
-    for row in range(0, size):
+    for row in range(0, GRID_SIZE):
         cell_x = 0
-        for col in range(0, size):
+        for col in range(0, GRID_SIZE):
             Cells_Rects[col][row] = pygame.Rect(cell_x, cell_y, CELL_SIZE, CELL_SIZE)
             Cells_Colour[col][row] = blue
             pygame.draw.rect(screen, Cells_Colour[col][row], Cells_Rects[col][row])
@@ -265,7 +265,7 @@ def gridMarked(x, y):
             return
         elif (Revealed_Cells[x][y] == 1):   # Grid doesn't have anything on it so let's mark it - !
             drawCells(x, y)
-            renderChar("!", black, x, y)
+            renderChar("!", white, x, y)
             Revealed_Cells[x][y] = 2
         elif (Revealed_Cells[x][y] == 2):   # Grid has been marked let's change it to a questionable - ?
             drawCells(x, y)
@@ -281,8 +281,8 @@ def gridMarked(x, y):
 """ 
 def main():
     screen.fill(white)
-    intializeCells(GRID_SIZE)
-    seedMines(GRID_SIZE)
+    intializeCells()
+    seedMines()
     drawGrid()
     done = False
     while done==False:
