@@ -47,11 +47,11 @@ size = [MAX_SCREEN_WIDTH, MAX_SCREEN_HEIGHT]
 screen = pygame.display.set_mode(size) 
 pygame.display.set_caption("Minesweeper")
 
+
 """
 Initializes the minefield and sets the proximity values of all grids
 """
 def seedMines():
-    # TODO: Calculate proximity to mines
     for i in range(0, MINE_COUNT):
         mine = randint(0,((GRID_SIZE*GRID_SIZE)-1))
         mine_x = mine // GRID_SIZE
@@ -170,6 +170,7 @@ def mineWasHit(x, y, grid):
     setGridColor(x, y, red) 
     drawCells(x, y)
     displayChar(grid, x, y)
+    return True
 
 """ 
     Function that is called when a blank square (represented by 0) is clicked on
@@ -208,7 +209,9 @@ def leftMouseButton(pos):
     mouse_y = pos[1]
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
-    gridClicked(mouse_x, mouse_y)
+    result = gridClicked(mouse_x, mouse_y)
+    if result == True:
+        return result
     
 """ 
     Function that pulls apart the mouse input and assigns it to the correct function
@@ -248,6 +251,7 @@ def gridClicked(x, y):
         grid = Minefield[x][y]
         if (grid > 8):
             mineWasHit(x, y, grid)
+            return True
         elif (grid == 0):
             blankGridWasHit(x, y)
         else:
@@ -275,28 +279,92 @@ def gridMarked(x, y):
             drawCells(x, y)
             renderChar(" ", black, x, y)
             Revealed_Cells[x][y] = 1
+
+"""
+    Display the Game Over Screen
+"""   
+def gameOverScreen():
+    print ("endgame")
+    loop = False
+    while loop==False:
+        screen.fill(black)
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return False
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        loop = True
+        pygame.display.flip()
+        pygame.time.delay(100)
+    return True
+
+"""
+    Start the game
+"""    
+def startGame():
+    intializeCells()
+    seedMines()
+    drawGrid()
+    loop = False
+    while loop==False:
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return False
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    pos = pygame.mouse.get_pos()
+                    if event.button == 1:   # Left button click detected
+                        result = leftMouseButton(pos)
+                        if result == True:
+                            loop = True
+                    elif event.button == 3: # Right button click detected
+                        rightMouseButton(pos)    
+        pygame.display.flip()
+        pygame.time.delay(100)
+    return True
+
+"""
+    Display the Title Screen
+"""        
+def titleScreen():
+    print ("title")
+    loop = False
+    while loop==False:
+        screen.fill(blue)
+        titleFont = pygame.font.Font('freesansbold.ttf', 20)
+        titleSurf = titleFont.render('Minesweeper', True, black)
+        titleRect = titleSurf.get_rect()
+        titleRect.center = (MAX_SCREEN_WIDTH / 2, MAX_SCREEN_HEIGHT / 4)
+        screen.blit(titleSurf, titleRect)
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return False
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        loop = True
+        pygame.display.flip()
+        pygame.time.delay(100)
+    return True
             
 """ 
     Main method
 """ 
 def main():
     screen.fill(white)
-    intializeCells()
-    seedMines()
-    drawGrid()
-    done = False
-    while done==False:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                done = True
-            elif event.type == pygame.MOUSEBUTTONUP:
-                pos = pygame.mouse.get_pos()
-                if event.button == 1:   # Left button click detected
-                    leftMouseButton(pos)
-                elif event.button == 3: # Right button click detected
-                    rightMouseButton(pos)    
-        pygame.display.flip()
-        pygame.time.delay(100) 
+    
+    result = titleScreen()
+    if result==False:
+        return
+    
+    result = startGame()
+    if result==False:
+        return
+    
+    result = gameOverScreen()
+    if result==False:
+        return
     pygame.quit()
 
 if __name__ == '__main__':
