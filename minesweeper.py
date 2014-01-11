@@ -7,7 +7,6 @@
             github.com/BradySmith
 """
 
-import sys
 import pygame
 from random import randint
 
@@ -15,10 +14,14 @@ from random import randint
 GRID_SIZE = 15
 CELL_SIZE = 20
 MINE_COUNT = 20
+TIME = 0
+
 # Calculated Variables for Setup
-MAX_SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE
-MIN_SCREEN_HEIGHT = 0
-MAX_SCREEN_WIDTH = GRID_SIZE * CELL_SIZE
+MENU_BAR_HEIGHT = 30
+MENU_BAR_WIDTH = GRID_SIZE * CELL_SIZE
+MAX_SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE + MENU_BAR_HEIGHT
+MIN_SCREEN_HEIGHT = MENU_BAR_HEIGHT
+MAX_SCREEN_WIDTH = MENU_BAR_WIDTH
 MIN_SCREEN_WIDTH = 0
 MAX_COL_COUNT = GRID_SIZE - 1
 MAX_ROW_COUNT = GRID_SIZE - 1
@@ -88,7 +91,7 @@ Intialize all Cells_Rects to their starting value
 """
 def intializeCells():
     cell_x = 0
-    cell_y = 0
+    cell_y = MIN_SCREEN_HEIGHT
     for row in range(0, GRID_SIZE):
         cell_x = 0
         for col in range(0, GRID_SIZE):
@@ -114,7 +117,7 @@ def drawCells(x, y):
 """            
 def drawGrid():
     x = CELL_SIZE
-    y = CELL_SIZE
+    y = MIN_SCREEN_HEIGHT
     for row in range(0, GRID_SIZE):
         pygame.draw.line(screen, black, (x, MAX_SCREEN_HEIGHT), (x, MIN_SCREEN_HEIGHT) )
         pygame.draw.line(screen, black, (MIN_SCREEN_WIDTH, y), (MAX_SCREEN_WIDTH, y) )
@@ -207,6 +210,7 @@ def proximityGridWasHit(x, y):
 def leftMouseButton(pos):
     mouse_x = pos[0]
     mouse_y = pos[1]
+    mouse_y = mouse_y - MIN_SCREEN_HEIGHT
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
     result = gridClicked(mouse_x, mouse_y)
@@ -221,6 +225,7 @@ def rightMouseButton(pos):
     print("rightmousebutton")
     mouse_x = pos[0]
     mouse_y = pos[1]
+    mouse_y = mouse_y - MIN_SCREEN_HEIGHT
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
     gridMarked(mouse_x, mouse_y)
@@ -235,7 +240,7 @@ def coordinateIsRevealed(x, y):
     Function that checks to see if the coordinates are out of bounds
 """
 def coordinateIsOutOfBounds(x, y):
-    return x > MAX_COL_COUNT or x < MIN_SCREEN_WIDTH or y > MAX_ROW_COUNT or y < MIN_SCREEN_HEIGHT
+    return x > MAX_COL_COUNT or x < MIN_SCREEN_WIDTH or y > MAX_ROW_COUNT or y < 0
 
 """ 
     Is called on a left mouseclick - uses integer division to figure out which grid to access
@@ -262,23 +267,30 @@ def gridClicked(x, y):
 """   
 def gridMarked(x, y):
     print("gridmarked")
+    global MINE_COUNT
     if (coordinateIsOutOfBounds(x, y)):
+        print(x)
+        print(y)
+        print("out of bounds bitch")
         return
     else:
+        print("grid in bounds")
         if (Revealed_Cells[x][y] == 0):     # Grid has been revealed already so we can't do anything to it
             return
         elif (Revealed_Cells[x][y] == 1):   # Grid doesn't have anything on it so let's mark it - !
             drawCells(x, y)
             renderChar("!", white, x, y)
             Revealed_Cells[x][y] = 2
+            MINE_COUNT -= 1
         elif (Revealed_Cells[x][y] == 2):   # Grid has been marked let's change it to a questionable - ?
             drawCells(x, y)
             renderChar("?", black, x, y)
             Revealed_Cells[x][y] = 3
+            MINE_COUNT += 1
         elif (Revealed_Cells[x][y] == 3):   # Grid has been marked questionable so let's set it back to a blank
             drawCells(x, y)
             renderChar(" ", black, x, y)
-            Revealed_Cells[x][y] = 1
+            Revealed_Cells[x][y] = 1   
 
 """
     Display the Game Over Screen
@@ -307,7 +319,13 @@ def startGame():
     seedMines()
     drawGrid()
     loop = False
+    TIMER = 1
+    pygame.time.set_timer(TIMER, 1000)
     while loop==False:
+        if pygame.event.get(TIMER):
+            global TIME
+            TIME += 1
+        drawMenuBar(TIME)
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -319,7 +337,7 @@ def startGame():
                         if result == True:
                             loop = True
                     elif event.button == 3: # Right button click detected
-                        rightMouseButton(pos)    
+                        rightMouseButton(pos)
         pygame.display.flip()
         pygame.time.delay(100)
     return True
@@ -330,8 +348,8 @@ def startGame():
 def titleScreen():
     print ("title")
     loop = False
+    screen.fill(blue)
     while loop==False:
-        screen.fill(blue)
         titleFont = pygame.font.Font('freesansbold.ttf', 20)
         titleSurf = titleFont.render('Minesweeper', True, black)
         titleRect = titleSurf.get_rect()
@@ -347,6 +365,42 @@ def titleScreen():
         pygame.display.flip()
         pygame.time.delay(100)
     return True
+
+def drawMenuBar(time):
+    box_size = 50
+    border_size = 2
+    top_offset = 3
+    combined = border_size + top_offset
+    minecounterbox_x = (MENU_BAR_WIDTH // 2) - (box_size // 2)
+    
+    # Draw the actual bar
+    bar = pygame.Rect(0, 0, MENU_BAR_WIDTH, MENU_BAR_HEIGHT)
+    pygame.draw.rect(screen, grey, bar)
+    
+    # Draw the timer box
+    timer_border = pygame.Rect(top_offset, top_offset, box_size, (MENU_BAR_HEIGHT-(top_offset*2)))
+    timer_box = pygame.Rect(combined, top_offset+border_size, box_size-(border_size*2), (MENU_BAR_HEIGHT-(combined*2)))
+    pygame.draw.rect(screen, black, timer_border)
+    pygame.draw.rect(screen, white, timer_box)
+    
+    # Draw the minecounter box
+    minecounter_border = pygame.Rect(minecounterbox_x, top_offset, box_size, (MENU_BAR_HEIGHT-6))
+    minecounter_box = pygame.Rect(minecounterbox_x+border_size, combined, box_size-(border_size*2), (MENU_BAR_HEIGHT-(combined*2)))
+    pygame.draw.rect(screen, black, minecounter_border)
+    pygame.draw.rect(screen, white, minecounter_box)
+    
+    # Update the minecount
+    menufont = pygame.font.Font('freesansbold.ttf', 20)
+    mineSurf = menufont.render(str(MINE_COUNT), True, black)
+    mineRect = mineSurf.get_rect()
+    mineRect.center = (MENU_BAR_WIDTH // 2, combined+((MENU_BAR_HEIGHT-(combined*2))/2))
+    screen.blit(mineSurf, mineRect)
+    
+    # Update the timer
+    timerSurf = menufont.render(str(TIME), True, black)
+    timerRect = timerSurf.get_rect()
+    timerRect.center = ((combined+box_size/2), combined+((MENU_BAR_HEIGHT-(combined*2))/2))
+    screen.blit(timerSurf, timerRect)    
             
 """ 
     Main method
