@@ -29,6 +29,7 @@ MAX_ROW_COUNT = GRID_SIZE - 1
 # Defined Colours 
 black   = (   0,   0,   0)
 white   = ( 255, 255, 255)
+lightgrey = (238, 233, 233)
 green   = (   0, 100,   0)
 blue    = ( 100, 149, 237)
 darkblue =(   0,   0, 205)
@@ -346,22 +347,94 @@ def startGame():
     Display the Title Screen
 """        
 def titleScreen():
-    print ("title")
+    global MINE_COUNT
+    title_width = 200
+    title_height = 250
+    
+    button_width = 120
+    button_height = 35
+    button_border = 6
+    
+    border = 5
+    
     loop = False
-    screen.fill(blue)
+    drawGrid()
+    drawMenuBar(TIME)
     while loop==False:
-        titleFont = pygame.font.Font('freesansbold.ttf', 20)
-        titleSurf = titleFont.render('Minesweeper', True, black)
-        titleRect = titleSurf.get_rect()
-        titleRect.center = (MAX_SCREEN_WIDTH / 2, MAX_SCREEN_HEIGHT / 4)
-        screen.blit(titleSurf, titleRect)
+        titleFont = pygame.font.Font('freesansbold.ttf', 25)
+        buttonFont = pygame.font.Font('freesansbold.ttf', 18)
+        menuBackground_border = pygame.Rect((MAX_SCREEN_WIDTH - title_width) // 2, ((MAX_SCREEN_HEIGHT - title_height) // 2) + (MENU_BAR_HEIGHT // 2), title_width, title_height)
+        pygame.draw.rect(screen, black, menuBackground_border)
+        menuBackground_box = pygame.Rect(((MAX_SCREEN_WIDTH - title_width) // 2) + border, 
+                                         (((MAX_SCREEN_HEIGHT - title_height) // 2) + (MENU_BAR_HEIGHT // 2)) + border, 
+                                         title_width - border*2, title_height - border*2)
+        pygame.draw.rect(screen, lightgrey, menuBackground_box)
+        title = titleFont.render('Minesweeper', True, black)
+        titlePos = title.get_rect()
+        titlePos.center = (MAX_SCREEN_WIDTH // 2, menuBackground_box.centery - (title_height * 0.35))
+        screen.blit(title, titlePos)
+        
+        beginner = pygame.Rect(menuBackground_box.centerx - (button_width // 2), menuBackground_box.centery - 10, button_width, button_height)
+        pygame.draw.rect(screen, black, beginner)
+        beginner_border = pygame.Rect(menuBackground_box.centerx - (button_width // 2) + (button_border/2), menuBackground_box.centery - 10 + (button_border/2), 
+                                      button_width - button_border, button_height - button_border)
+        pygame.draw.rect(screen, white, beginner_border)
+        begginerText = buttonFont.render('Beginner', True, black)
+        beginnerRect = begginerText.get_rect()
+        beginnerRect.center = beginner.center
+        screen.blit(begginerText, beginnerRect)
+        
+        intermediate = pygame.Rect(menuBackground_box.centerx - (button_width // 2), menuBackground_box.centery + 30, button_width, button_height)
+        pygame.draw.rect(screen, black, intermediate)
+        intermediate_border = pygame.Rect(menuBackground_box.centerx - (button_width // 2) + (button_border/2), menuBackground_box.centery + 30 + (button_border/2), 
+                                      button_width - button_border, button_height - button_border)
+        pygame.draw.rect(screen, white, intermediate_border)
+        intermediateText = buttonFont.render('Intermediate', True, black)
+        intermediateRect = intermediateText.get_rect()
+        intermediateRect.center = intermediate.center
+        screen.blit(intermediateText, intermediateRect)
+        
+        expert = pygame.Rect(menuBackground_box.centerx - (button_width // 2), menuBackground_box.centery + 70, button_width, button_height)
+        pygame.draw.rect(screen, black, expert)
+        expert_border = pygame.Rect(menuBackground_box.centerx - (button_width // 2) + (button_border/2), menuBackground_box.centery + 70 + (button_border/2), 
+                                          button_width - button_border, button_height - button_border)
+        pygame.draw.rect(screen, white, expert_border)
+        expertText = buttonFont.render('Expert', True, black)
+        expertRect = expertText.get_rect()
+        expertRect.center = expert.center
+        screen.blit(expertText, expertRect)
+        
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return False
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == 1:
-                        loop = True
+                    pos = pygame.mouse.get_pos()
+                    if event.button == 1:   # Left button click detected
+                        mouse_x = pos[0]
+                        mouse_y = pos[1]
+                        if (mouse_x > beginnerRect.centerx-(button_width/2) and 
+                            mouse_x < beginnerRect.centerx+(button_width/2) and
+                            mouse_y > beginnerRect.centery-(button_height/2) and
+                            mouse_y < beginnerRect.centery+(button_height/2)):
+                            print ("beginner")
+                            MINE_COUNT = 5
+                            loop = True
+                        elif (mouse_x > intermediateRect.centerx-(button_width/2) and 
+                            mouse_x < intermediateRect.centerx+(button_width/2) and
+                            mouse_y > intermediateRect.centery-(button_height/2) and
+                            mouse_y < intermediateRect.centery+(button_height/2)):
+                            print ("intermediate")
+                            MINE_COUNT = 10
+                            loop = True
+                        elif (mouse_x > expertRect.centerx-(button_width/2) and 
+                            mouse_x < expertRect.centerx+(button_width/2) and
+                            mouse_y > expertRect.centery-(button_height/2) and
+                            mouse_y < expertRect.centery+(button_height/2)):
+                            print ("expert")
+                            MINE_COUNT = 5
+                            loop = True
+
         pygame.display.flip()
         pygame.time.delay(100)
     return True
@@ -406,7 +479,7 @@ def drawMenuBar(time):
     Main method
 """ 
 def main():
-    screen.fill(white)
+    screen.fill(blue)
     
     result = titleScreen()
     if result==False:
