@@ -432,7 +432,7 @@ def titleScreen():
                             mouse_y > expertRect.centery-(button_height/2) and
                             mouse_y < expertRect.centery+(button_height/2)):
                             print ("expert")
-                            MINE_COUNT = 5
+                            MINE_COUNT = 20
                             loop = True
 
         pygame.display.flip()
