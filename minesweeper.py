@@ -11,7 +11,7 @@ import pygame
 from random import randint
 
 # Game Variables
-GRID_SIZE = 16
+GRID_SIZE = 10
 CELL_SIZE = 26
 MINE_COUNT = 20
 TIME = 0
@@ -312,7 +312,7 @@ def gridMarked(x, y):
 def gameOverScreen():
     loop = False
     while loop==False:
-        screen.fill(black)
+        
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -462,8 +462,8 @@ def titleScreen():
                             mouse_y > beginnerRect.centery-(button_height/2) and
                             mouse_y < beginnerRect.centery+(button_height/2)):
                             print ("beginner")
-                            MINE_COUNT = 10
-                            GRID_SIZE = 9
+                            MINE_COUNT = 15
+                            GRID_SIZE = 10
                             loop = True
                         elif (mouse_x > intermediateRect.centerx-(button_width/2) and 
                             mouse_x < intermediateRect.centerx+(button_width/2) and
@@ -529,18 +529,14 @@ def drawMenuBar(time):
 """ 
 def main():
     screen.fill(blue)
-    
-    result = titleScreen()
-    if result==False:
-        return
-    
-    result = startGame()
-    if result==False:
-        return
-    
-    result = gameOverScreen()
-    if result==False:
-        return
+    result = True
+    while result == True:
+        result = titleScreen()
+        if result==False:
+            return        
+        result = startGame()
+        if result==False:
+            return        
     pygame.quit()
 
 if __name__ == '__main__':
