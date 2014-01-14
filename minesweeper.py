@@ -293,7 +293,7 @@ def gridMarked(x, y):
             return
         elif (Revealed_Cells[x][y] == 1):   # Grid doesn't have anything on it so let's mark it - !
             drawCells(x, y)
-            renderChar("!", white, x, y)
+            renderChar("!", red, x, y)
             Revealed_Cells[x][y] = 2
             MINE_COUNT -= 1
         elif (Revealed_Cells[x][y] == 2):   # Grid has been marked let's change it to a questionable - ?
@@ -490,7 +490,7 @@ def titleScreen():
 """      
 def drawMenuBar(time):
     box_size = 50
-    border_size = 2
+    border_size = 3
     top_offset = 3
     combined = border_size + top_offset
     minecounterbox_x = (MENU_BAR_WIDTH // 2) - (box_size // 2)
@@ -505,6 +505,18 @@ def drawMenuBar(time):
     pygame.draw.rect(screen, black, timer_border)
     pygame.draw.rect(screen, white, timer_box)
     
+    # Draw the menu button
+    menuButton_border = pygame.Rect(MAX_SCREEN_WIDTH - top_offset - box_size, top_offset, box_size, (MENU_BAR_HEIGHT-(top_offset*2)))
+    menuButton = pygame.Rect(MAX_SCREEN_WIDTH - box_size, top_offset+border_size, box_size-(border_size*2), (MENU_BAR_HEIGHT-(combined*2)))
+    pygame.draw.rect(screen, black, menuButton_border)
+    pygame.draw.rect(screen, white, menuButton)   
+
+    menufont = pygame.font.Font('freesansbold.ttf', 14)
+    menuSurf = menufont.render('MENU', True, black)
+    menuRect = menuSurf.get_rect()
+    menuRect.center = (menuButton.centerx, menuButton.centery)
+    screen.blit(menuSurf, menuRect)
+    
     # Draw the minecounter box
     minecounter_border = pygame.Rect(minecounterbox_x, top_offset, box_size, (MENU_BAR_HEIGHT-6))
     minecounter_box = pygame.Rect(minecounterbox_x+border_size, combined, box_size-(border_size*2), (MENU_BAR_HEIGHT-(combined*2)))
@@ -512,16 +524,16 @@ def drawMenuBar(time):
     pygame.draw.rect(screen, white, minecounter_box)
     
     # Update the minecount
-    menufont = pygame.font.Font('freesansbold.ttf', 20)
+    menufont = pygame.font.Font('freesansbold.ttf', 18)
     mineSurf = menufont.render(str(MINE_COUNT), True, black)
     mineRect = mineSurf.get_rect()
-    mineRect.center = (MENU_BAR_WIDTH // 2, combined+((MENU_BAR_HEIGHT-(combined*2))/2))
+    mineRect.center = (minecounter_box.centerx, minecounter_box.centery)
     screen.blit(mineSurf, mineRect)
     
     # Update the timer
     timerSurf = menufont.render(str(TIME), True, black)
     timerRect = timerSurf.get_rect()
-    timerRect.center = ((combined+box_size/2), combined+((MENU_BAR_HEIGHT-(combined*2))/2))
+    timerRect.center = (timer_box.centerx, timer_box.centery)
     screen.blit(timerSurf, timerRect)    
             
 """ 
