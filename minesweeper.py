@@ -11,8 +11,8 @@ import pygame
 from random import randint
 
 # Game Variables
-GRID_SIZE = 15
-CELL_SIZE = 20
+GRID_SIZE = 16
+CELL_SIZE = 26
 MINE_COUNT = 20
 TIME = 0
 
@@ -155,7 +155,7 @@ def displayChar(inChar, x, y):
         renderChar(char, white, x, y)
     
 def renderChar(inChar, colour, x, y):
-    myFont = pygame.font.SysFont("None", 25)
+    myFont = pygame.font.SysFont("None", 30)
     renderChar = myFont.render(str(inChar), 0, (colour))
     rect = renderChar.get_rect()
     rect.center = Cells_Rects[x][y].center
@@ -186,14 +186,30 @@ def blankGridWasHit(x, y):
     displayChar(grid, x, y)
     
     # Cascade to all neighbour squares
-    gridClicked(x-1, y)
-    gridClicked(x+1, y)
-    gridClicked(x, y+1)
-    gridClicked(x, y-1)
-    gridClicked(x-1, y-1)
-    gridClicked(x+1, y+1)
-    gridClicked(x-1, y+1)
-    gridClicked(x+1, y-1)
+    if not (coordinateIsOutOfBounds(x-1, y)):
+        if not (coordinateIsRevealed(x-1, y)):
+            gridClicked(x-1, y)
+    if not (coordinateIsOutOfBounds(x+1, y)):
+        if not (coordinateIsRevealed(x+1, y)):
+            gridClicked(x+1, y)
+    if not (coordinateIsOutOfBounds(x, y+1)):
+        if not (coordinateIsRevealed(x, y+1)):
+            gridClicked(x, y+1)
+    if not (coordinateIsOutOfBounds(x, y-1)):
+        if not (coordinateIsRevealed(x, y-1)):
+            gridClicked(x, y-1)
+    if not (coordinateIsOutOfBounds(x-1, y-1)):
+        if not (coordinateIsRevealed(x-1, y-1)):
+            gridClicked(x-1, y-1)
+    if not (coordinateIsOutOfBounds(x+1, y+1)):
+        if not (coordinateIsRevealed(x+1, y+1)):
+            gridClicked(x+1, y+1)
+    if not (coordinateIsOutOfBounds(x-1, y+1)):
+        if not (coordinateIsRevealed(x-1, y+1)):
+            gridClicked(x-1, y+1)
+    if not (coordinateIsOutOfBounds(x+1, y-1)):
+        if not (coordinateIsRevealed(x+1, y-1)):
+            gridClicked(x+1, y-1)
 
 """ 
     Function that is called when a square with proximity information is selected
@@ -223,7 +239,6 @@ def leftMouseButton(pos):
     on right button click
 """
 def rightMouseButton(pos):
-    print("rightmousebutton")
     mouse_x = pos[0]
     mouse_y = pos[1]
     mouse_y = mouse_y - MIN_SCREEN_HEIGHT
@@ -235,7 +250,10 @@ def rightMouseButton(pos):
     Function that returns whether or not a row has been revealed or not
 """
 def coordinateIsRevealed(x, y):
-    return Revealed_Cells[x][y]
+    if (Revealed_Cells[x][y] != 1):
+        return True
+    else:
+        return False
 
 """ 
     Function that checks to see if the coordinates are out of bounds
@@ -250,7 +268,7 @@ def coordinateIsOutOfBounds(x, y):
 def gridClicked(x, y):
     if (coordinateIsOutOfBounds(x, y)):
         return
-    elif (coordinateIsRevealed(x, y) != 1):
+    elif (coordinateIsRevealed(x, y)):
         return
     else:
         Revealed_Cells[x][y] = 0
@@ -267,15 +285,10 @@ def gridClicked(x, y):
     Is called on a right mouseclick - allows the user to mark a grid
 """   
 def gridMarked(x, y):
-    print("gridmarked")
     global MINE_COUNT
     if (coordinateIsOutOfBounds(x, y)):
-        print(x)
-        print(y)
-        print("out of bounds bitch")
         return
     else:
-        print("grid in bounds")
         if (Revealed_Cells[x][y] == 0):     # Grid has been revealed already so we can't do anything to it
             return
         elif (Revealed_Cells[x][y] == 1):   # Grid doesn't have anything on it so let's mark it - !
@@ -297,7 +310,6 @@ def gridMarked(x, y):
     Display the Game Over Screen
 """   
 def gameOverScreen():
-    print ("endgame")
     loop = False
     while loop==False:
         screen.fill(black)
@@ -316,6 +328,36 @@ def gameOverScreen():
     Start the game
 """    
 def startGame():
+    global MENU_BAR_WIDTH
+    global MAX_SCREEN_HEIGHT
+    global MIN_SCREEN_HEIGHT
+    global MAX_SCREEN_WIDTH
+    global MIN_SCREEN_WIDTH
+    global MAX_COL_COUNT
+    global MAX_ROW_COUNT
+    global size
+    global screen
+    global Cells_Rects
+    global Cells_Colour
+    global Minefield
+    global Revealed_Cells
+    
+    MENU_BAR_WIDTH = GRID_SIZE * CELL_SIZE
+    MAX_SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE + MENU_BAR_HEIGHT
+    MIN_SCREEN_HEIGHT = MENU_BAR_HEIGHT
+    MAX_SCREEN_WIDTH = MENU_BAR_WIDTH
+    MIN_SCREEN_WIDTH = 0
+    MAX_COL_COUNT = GRID_SIZE - 1
+    MAX_ROW_COUNT = GRID_SIZE - 1
+    
+    size = [MAX_SCREEN_WIDTH, MAX_SCREEN_HEIGHT]
+    screen = pygame.display.set_mode(size)
+    
+    Cells_Rects = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+    Cells_Colour = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+    Minefield = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+    Revealed_Cells = [[1 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+    
     intializeCells()
     seedMines()
     drawGrid()
@@ -348,6 +390,8 @@ def startGame():
 """        
 def titleScreen():
     global MINE_COUNT
+    global GRID_SIZE
+    
     title_width = 200
     title_height = 250
     
@@ -418,27 +462,32 @@ def titleScreen():
                             mouse_y > beginnerRect.centery-(button_height/2) and
                             mouse_y < beginnerRect.centery+(button_height/2)):
                             print ("beginner")
-                            MINE_COUNT = 5
+                            MINE_COUNT = 10
+                            GRID_SIZE = 9
                             loop = True
                         elif (mouse_x > intermediateRect.centerx-(button_width/2) and 
                             mouse_x < intermediateRect.centerx+(button_width/2) and
                             mouse_y > intermediateRect.centery-(button_height/2) and
                             mouse_y < intermediateRect.centery+(button_height/2)):
                             print ("intermediate")
-                            MINE_COUNT = 10
+                            MINE_COUNT = 40
+                            GRID_SIZE = 16
                             loop = True
                         elif (mouse_x > expertRect.centerx-(button_width/2) and 
                             mouse_x < expertRect.centerx+(button_width/2) and
                             mouse_y > expertRect.centery-(button_height/2) and
                             mouse_y < expertRect.centery+(button_height/2)):
                             print ("expert")
-                            MINE_COUNT = 20
+                            MINE_COUNT = 100
+                            GRID_SIZE = 22
                             loop = True
-
         pygame.display.flip()
         pygame.time.delay(100)
     return True
 
+"""
+    Function to draw the menu bar
+"""      
 def drawMenuBar(time):
     box_size = 50
     border_size = 2
