@@ -7,6 +7,16 @@
             github.com/BradySmith
 """
 
+#TODO: Fix it so you can't hit a mine on your first try
+#TODO: Fix the wierd bottom line 111 bug that shows up sometime
+#TODO: Add an X to the menu so it makes it more clear than you can just exit
+#TODO: Have it check for a win condition
+#TODO: Fix clock bug
+#TODO: Add flavour text to the menu depending on the situation
+#TODO: Add mouse-over highlighting to the menu
+#TODO: Reset timer to 0 on the start of a new game from the old game
+#TODO: Add double click auto fill support
+
 import pygame
 from random import randint
 
@@ -25,6 +35,9 @@ MAX_SCREEN_WIDTH = MENU_BAR_WIDTH
 MIN_SCREEN_WIDTH = 0
 MAX_COL_COUNT = GRID_SIZE - 1
 MAX_ROW_COUNT = GRID_SIZE - 1
+MENU_BUTTON_X = 1
+MENU_BUTTON_Y = 1
+GAME_STATE = "setup"
 
 # Defined Colours 
 black   = (   0,   0,   0)
@@ -219,6 +232,22 @@ def proximityGridWasHit(x, y):
     setGridColor(x, y, white) 
     drawCells(x, y)
     displayChar(grid, x, y)
+    
+def refreshScreen():
+    for x in range(0, GRID_SIZE):
+        for y in range(0, GRID_SIZE):
+            if (Revealed_Cells[x][y] == 0):
+                grid = Minefield[x][y]
+                if (grid > 8):
+                    mineWasHit(x, y, grid)
+                elif (grid == 0):
+                    blankGridWasHit(x, y)
+                else:
+                    proximityGridWasHit(x, y)
+            else:
+                pygame.draw.rect(screen, Cells_Colour[x][y], Cells_Rects[x][y])
+    drawGrid()
+                
 
 """ 
     Function that pulls apart the mouse input and assigns it to the correct function
@@ -226,10 +255,15 @@ def proximityGridWasHit(x, y):
 """
 def leftMouseButton(pos):
     mouse_x = pos[0]
-    mouse_y = pos[1]
+    mouse_y = pos[1]   
+    if (mouse_x > MENU_BUTTON_X and mouse_x < (MENU_BUTTON_X + MENU_BUTTON_WIDTH) and mouse_y > MENU_BUTTON_Y and mouse_y < MENU_BUTTON_Y + MENU_BUTTON_HEIGHT):
+        state = "pause"
+        titleScreen(state)
+        refreshScreen()
     mouse_y = mouse_y - MIN_SCREEN_HEIGHT
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
+    
     result = gridClicked(mouse_x, mouse_y)
     if result == True:
         return result
@@ -307,24 +341,6 @@ def gridMarked(x, y):
             Revealed_Cells[x][y] = 1   
 
 """
-    Display the Game Over Screen
-"""   
-def gameOverScreen():
-    loop = False
-    while loop==False:
-        
-        for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return False
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == 1:
-                        loop = True
-        pygame.display.flip()
-        pygame.time.delay(100)
-    return True
-
-"""
     Start the game
 """    
 def startGame():
@@ -341,6 +357,8 @@ def startGame():
     global Cells_Colour
     global Minefield
     global Revealed_Cells
+    global GAME_STATE
+
     
     MENU_BAR_WIDTH = GRID_SIZE * CELL_SIZE
     MAX_SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE + MENU_BAR_HEIGHT
@@ -349,6 +367,7 @@ def startGame():
     MIN_SCREEN_WIDTH = 0
     MAX_COL_COUNT = GRID_SIZE - 1
     MAX_ROW_COUNT = GRID_SIZE - 1
+    GAME_STATE = "running"
     
     size = [MAX_SCREEN_WIDTH, MAX_SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
@@ -363,6 +382,7 @@ def startGame():
     drawGrid()
     loop = False
     TIMER = 1
+
     pygame.time.set_timer(TIMER, 1000)
     while loop==False:
         if pygame.event.get(TIMER):
@@ -376,9 +396,12 @@ def startGame():
                 elif event.type == pygame.MOUSEBUTTONUP:
                     pos = pygame.mouse.get_pos()
                     if event.button == 1:   # Left button click detected
-                        result = leftMouseButton(pos)
+                        if (GAME_STATE == "hit"):
+                            loop = True 
+                        else:                          
+                            result = leftMouseButton(pos)
                         if result == True:
-                            loop = True
+                            GAME_STATE = "hit"
                     elif event.button == 3: # Right button click detected
                         rightMouseButton(pos)
         pygame.display.flip()
@@ -388,7 +411,7 @@ def startGame():
 """
     Display the Title Screen
 """        
-def titleScreen():
+def titleScreen(state):
     global MINE_COUNT
     global GRID_SIZE
     
@@ -461,7 +484,6 @@ def titleScreen():
                             mouse_x < beginnerRect.centerx+(button_width/2) and
                             mouse_y > beginnerRect.centery-(button_height/2) and
                             mouse_y < beginnerRect.centery+(button_height/2)):
-                            print ("beginner")
                             MINE_COUNT = 15
                             GRID_SIZE = 10
                             loop = True
@@ -469,7 +491,6 @@ def titleScreen():
                             mouse_x < intermediateRect.centerx+(button_width/2) and
                             mouse_y > intermediateRect.centery-(button_height/2) and
                             mouse_y < intermediateRect.centery+(button_height/2)):
-                            print ("intermediate")
                             MINE_COUNT = 40
                             GRID_SIZE = 16
                             loop = True
@@ -477,18 +498,27 @@ def titleScreen():
                             mouse_x < expertRect.centerx+(button_width/2) and
                             mouse_y > expertRect.centery-(button_height/2) and
                             mouse_y < expertRect.centery+(button_height/2)):
-                            print ("expert")
                             MINE_COUNT = 100
                             GRID_SIZE = 22
                             loop = True
+                        if (state == "pause"):
+                            if (mouse_x > MENU_BUTTON_X and mouse_x < (MENU_BUTTON_X + MENU_BUTTON_WIDTH) 
+                                and mouse_y > MENU_BUTTON_Y and mouse_y < MENU_BUTTON_Y + MENU_BUTTON_HEIGHT):
+                                return True
         pygame.display.flip()
-        pygame.time.delay(100)
+        pygame.time.delay(50)
+    startGame()
     return True
 
 """
     Function to draw the menu bar
 """      
 def drawMenuBar(time):
+    global MENU_BUTTON_X
+    global MENU_BUTTON_Y
+    global MENU_BUTTON_HEIGHT
+    global MENU_BUTTON_WIDTH
+    
     box_size = 50
     border_size = 3
     top_offset = 3
@@ -506,8 +536,12 @@ def drawMenuBar(time):
     pygame.draw.rect(screen, white, timer_box)
     
     # Draw the menu button
+    MENU_BUTTON_X = MAX_SCREEN_WIDTH - box_size
+    MENU_BUTTON_Y = top_offset+border_size
+    MENU_BUTTON_HEIGHT = (MENU_BAR_HEIGHT-(combined*2))
+    MENU_BUTTON_WIDTH = box_size-(border_size*2)
     menuButton_border = pygame.Rect(MAX_SCREEN_WIDTH - top_offset - box_size, top_offset, box_size, (MENU_BAR_HEIGHT-(top_offset*2)))
-    menuButton = pygame.Rect(MAX_SCREEN_WIDTH - box_size, top_offset+border_size, box_size-(border_size*2), (MENU_BAR_HEIGHT-(combined*2)))
+    menuButton = pygame.Rect(MENU_BUTTON_X, MENU_BUTTON_Y, MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT)
     pygame.draw.rect(screen, black, menuButton_border)
     pygame.draw.rect(screen, white, menuButton)   
 
@@ -543,12 +577,9 @@ def main():
     screen.fill(blue)
     result = True
     while result == True:
-        result = titleScreen()
+        result = titleScreen("new")
         if result==False:
-            return        
-        result = startGame()
-        if result==False:
-            return        
+            return               
     pygame.quit()
 
 if __name__ == '__main__':
