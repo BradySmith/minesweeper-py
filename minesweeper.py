@@ -8,13 +8,7 @@
 """
 
 #TODO: Fix it so you can't hit a mine on your first try
-#TODO: Fix the wierd bottom line 111 bug that shows up sometime
-#TODO: Add an X to the menu so it makes it more clear than you can just exit
-#TODO: Have it check for a win condition
 #TODO: Fix clock bug
-#TODO: Add flavour text to the menu depending on the situation
-#TODO: Add mouse-over highlighting to the menu
-#TODO: Reset timer to 0 on the start of a new game from the old game
 #TODO: Add double click auto fill support
 
 import pygame
@@ -75,7 +69,6 @@ def seedMines():
         while ( Minefield[mine_x][mine_y] != 0):
             mine_x = randint(0,GRID_SIZE-1)
             mine_y = randint(0,GRID_SIZE-1)
-            print ("duplicated")
         Minefield[mine_x][mine_y] = 9 
     for x in range(0, GRID_SIZE):
         for y in range(0, GRID_SIZE):
@@ -323,7 +316,6 @@ def gridClicked(x, y):
         else:
             proximityGridWasHit(x, y)
     if (checkVictory()):
-        print ("victory")
         return "victory"
 
 """ 
@@ -372,12 +364,16 @@ def checkVictory():
     unknown = 0
     for x in range(0, GRID_SIZE):
         for y in range(0, GRID_SIZE): 
-            if (Revealed_Cells[x][y] != 0):
+            if (Revealed_Cells[x][y] == 3 or Revealed_Cells[x][y] == 1):
                 unknown += 1
+    print (unknown)
     if (unknown == MINE_COUNT):
+        print ("victory")
+        GAME_STATE == "victory"
         return True
     else:
         return False
+    
 
 """
     Start the game
@@ -397,6 +393,7 @@ def startGame():
     global Minefield
     global Revealed_Cells
     global GAME_STATE
+    global TIME
 
     
     MENU_BAR_WIDTH = GRID_SIZE * CELL_SIZE
@@ -421,12 +418,12 @@ def startGame():
     drawGrid()
     loop = False
     TIMER = 1
-    showGame()
+    TIME = 0
+    quitState = False
 
     pygame.time.set_timer(TIMER, 1000)
     while loop==False:
         if pygame.event.get(TIMER):
-            global TIME
             TIME += 1
         drawMenuBar(TIME)
         for event in pygame.event.get():
@@ -437,14 +434,18 @@ def startGame():
                     pos = pygame.mouse.get_pos()
                     if event.button == 1:   # Left button click detected
                         if (GAME_STATE == "hit"):
-                            loop = True 
+                            quitState = titleScreen("new")
+                            if (quitState == False):
+                                return False
                         else:                          
                             result = leftMouseButton(pos)
                         if result == "mine":
                             GAME_STATE = "hit"
                         if result == "victory":
                             GAME_STATE = "victory"
-                            loop = True
+                            quitState = titleScreen("new")
+                            if (quitState == False):
+                                return False
                     elif event.button == 3: # Right button click detected
                         rightMouseButton(pos)
         pygame.display.flip()
@@ -458,10 +459,10 @@ def titleScreen(state):
     global MINE_COUNT
     global GRID_SIZE
     
-    title_width = 200
+    title_width = 230
     title_height = 250
     
-    button_width = 120
+    button_width = 150
     button_height = 35
     button_border = 6
     
@@ -481,7 +482,7 @@ def titleScreen(state):
         pygame.draw.rect(screen, lightgrey, menuBackground_box)
         title = titleFont.render('Minesweeper', True, black)
         titlePos = title.get_rect()
-        titlePos.center = (MAX_SCREEN_WIDTH // 2, menuBackground_box.centery - (title_height * 0.35))
+        titlePos.center = (MAX_SCREEN_WIDTH // 2, menuBackground_box.centery - (title_height * 0.33))
         screen.blit(title, titlePos)
         
         beginner = pygame.Rect(menuBackground_box.centerx - (button_width // 2), menuBackground_box.centery - 10, button_width, button_height)
@@ -514,6 +515,36 @@ def titleScreen(state):
         expertRect.center = expert.center
         screen.blit(expertText, expertRect)
         
+        sizex = 45
+        sizey = 28
+        xborder = 8
+        offsetx = menuBackground_box.centerx + (title_width // 2) - sizex
+        offsety = menuBackground_box.centery - (title_height // 2)
+        exit_border = pygame.Rect(offsetx, offsety, sizex, sizey)
+        pygame.draw.rect(screen, black, exit_border)
+        
+        offsetx = menuBackground_box.centerx + (title_width // 2) - sizex
+        offsety = menuBackground_box.centery - (title_height // 2)
+        exit = pygame.Rect(offsetx+(xborder/2), offsety+(xborder/2), sizex-(xborder), sizey-(xborder))
+        pygame.draw.rect(screen, red, exit)
+        exitX = buttonFont.render('X', True, black)
+        exitRect = exitX.get_rect()
+        exitRect.center = exit.center
+        screen.blit(exitX, exitRect)       
+        
+        if (GAME_STATE == 'victory'):
+            textContent = "Victory! Want to play again?"
+        elif (GAME_STATE == 'hit'):
+            textContent = "You lost. Try again."
+        elif (GAME_STATE == 'setup'):
+            textContent = "Welcome! Pick a difficulty!"
+        else:
+            textContent = "Want to start a new game?"
+        textFont = pygame.font.Font('freesansbold.ttf', 15)
+        text = textFont.render(textContent, True, black)
+        textPos = text.get_rect()
+        textPos.center = (MAX_SCREEN_WIDTH // 2, menuBackground_box.centery - (title_height * 0.2))
+        screen.blit(text, textPos)
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -544,6 +575,18 @@ def titleScreen(state):
                             MINE_COUNT = 100
                             GRID_SIZE = 22
                             loop = True
+                        elif (mouse_x > exitRect.centerx-(sizex/2) and 
+                            mouse_x < exitRect.centerx+(sizex/2) and
+                            mouse_y > exitRect.centery-(sizey/2) and
+                            mouse_y < exitRect.centery+(sizey/2)):
+                            if (GAME_STATE == "setup"):
+                                loop = True
+                            elif (GAME_STATE == "hit" or GAME_STATE == "victory"):
+                                refreshScreen()
+                                showGame()
+                                return True
+                            else:
+                                return True
                         if (state == "pause"):
                             if (mouse_x > MENU_BUTTON_X and mouse_x < (MENU_BUTTON_X + MENU_BUTTON_WIDTH) 
                                 and mouse_y > MENU_BUTTON_Y and mouse_y < MENU_BUTTON_Y + MENU_BUTTON_HEIGHT):
