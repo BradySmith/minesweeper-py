@@ -70,14 +70,13 @@ Initializes the minefield and sets the proximity values of all grids
 """
 def seedMines():
     for i in range(0, MINE_COUNT):
-        mine = randint(0,((GRID_SIZE*GRID_SIZE)-1))
-        mine_x = mine // GRID_SIZE
-        temp = mine_x * GRID_SIZE
-        mine_y = mine - temp
-        if ( Minefield[mine_x][mine_y] == 0):
-            Minefield[mine_x][mine_y] = 9 
-        else:
-            i = i-1
+        mine_x = randint(0,GRID_SIZE-1)
+        mine_y = randint(0,GRID_SIZE-1)
+        while ( Minefield[mine_x][mine_y] != 0):
+            mine_x = randint(0,GRID_SIZE-1)
+            mine_y = randint(0,GRID_SIZE-1)
+            print ("duplicated")
+        Minefield[mine_x][mine_y] = 9 
     for x in range(0, GRID_SIZE):
         for y in range(0, GRID_SIZE):
             if (Minefield[x][y] > 8):
@@ -97,6 +96,15 @@ def seedMines():
                     Minefield[x+1][y-1] = Minefield[x+1][y-1] + 1
                 if (y != MAX_ROW_COUNT and x != MIN_SCREEN_WIDTH):
                     Minefield[x-1][y+1] = Minefield[x-1][y+1] + 1
+                    
+    # Fixes weird bug with the minefield looping
+    for x in range(0, GRID_SIZE):
+        if (Minefield[x][0] > 8):
+            Minefield[x][GRID_SIZE-1] = Minefield[x][GRID_SIZE-1] - 1
+            if (x != MIN_SCREEN_WIDTH):
+                    Minefield[x-1][GRID_SIZE-1] = Minefield[x-1][GRID_SIZE-1] - 1
+            if (x != MAX_COL_COUNT):
+                    Minefield[x+1][GRID_SIZE-1] = Minefield[x+1][GRID_SIZE-1] - 1
 
 """
 Intialize all Cells_Rects to their starting value
@@ -265,7 +273,7 @@ def leftMouseButton(pos):
     mouse_y = mouse_y // CELL_SIZE
     
     result = gridClicked(mouse_x, mouse_y)
-    if result == True:
+    if (result == "mine" or result == "victory"):
         return result
     
 """ 
@@ -309,11 +317,14 @@ def gridClicked(x, y):
         grid = Minefield[x][y]
         if (grid > 8):
             mineWasHit(x, y, grid)
-            return True
+            return "mine"
         elif (grid == 0):
             blankGridWasHit(x, y)
         else:
             proximityGridWasHit(x, y)
+    if (checkVictory()):
+        print ("victory")
+        return "victory"
 
 """ 
     Is called on a right mouseclick - allows the user to mark a grid
@@ -338,7 +349,35 @@ def gridMarked(x, y):
         elif (Revealed_Cells[x][y] == 3):   # Grid has been marked questionable so let's set it back to a blank
             drawCells(x, y)
             renderChar(" ", black, x, y)
-            Revealed_Cells[x][y] = 1   
+            Revealed_Cells[x][y] = 1
+            
+""" 
+    Displays the entire game - useful for debugging and testing
+"""               
+def showGame():
+    for x in range(0, GRID_SIZE):
+        for y in range(0, GRID_SIZE):
+            grid = Minefield[x][y]
+            if (grid > 8):
+                renderChar('*', black, x, y)
+            elif (grid == 0):
+                renderChar(' ', black, x, y)
+            else:
+                renderChar(grid, black, x, y)   
+                
+""" 
+    Check for a win
+"""
+def checkVictory():
+    unknown = 0
+    for x in range(0, GRID_SIZE):
+        for y in range(0, GRID_SIZE): 
+            if (Revealed_Cells[x][y] != 0):
+                unknown += 1
+    if (unknown == MINE_COUNT):
+        return True
+    else:
+        return False
 
 """
     Start the game
@@ -382,6 +421,7 @@ def startGame():
     drawGrid()
     loop = False
     TIMER = 1
+    showGame()
 
     pygame.time.set_timer(TIMER, 1000)
     while loop==False:
@@ -400,8 +440,11 @@ def startGame():
                             loop = True 
                         else:                          
                             result = leftMouseButton(pos)
-                        if result == True:
+                        if result == "mine":
                             GAME_STATE = "hit"
+                        if result == "victory":
+                            GAME_STATE = "victory"
+                            loop = True
                     elif event.button == 3: # Right button click detected
                         rightMouseButton(pos)
         pygame.display.flip()
