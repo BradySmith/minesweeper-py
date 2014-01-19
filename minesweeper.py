@@ -9,9 +9,11 @@
 
 #TODO: Fix it so you can't hit a mine on your first try
 #TODO: Fix clock bug
-#TODO: Add double click auto fill support
+#TODO: Fix exit bug
+#TOD: Fix refresh bug so it stores marked squares
 
 import pygame
+import datetime
 from random import randint
 
 # Game Variables
@@ -167,7 +169,10 @@ def displayChar(inChar, x, y):
         renderChar(char, grey, x, y)
     else:
         renderChar(char, white, x, y)
-    
+
+""" 
+    Draws the given character on the given grid
+"""    
 def renderChar(inChar, colour, x, y):
     myFont = pygame.font.SysFont("None", 30)
     renderChar = myFont.render(str(inChar), 0, (colour))
@@ -233,7 +238,10 @@ def proximityGridWasHit(x, y):
     setGridColor(x, y, white) 
     drawCells(x, y)
     displayChar(grid, x, y)
-    
+
+""" 
+    Refresh the screen
+"""   
 def refreshScreen():
     for x in range(0, GRID_SIZE):
         for y in range(0, GRID_SIZE):
@@ -248,7 +256,53 @@ def refreshScreen():
             else:
                 pygame.draw.rect(screen, Cells_Colour[x][y], Cells_Rects[x][y])
     drawGrid()
-                
+
+""" 
+    Checks to see if the squares around the given grid have been marked and solved, if they have been
+    then it automatically flips all the surrounding grids
+"""   
+def gridIsSolved(x, y):
+    count = 0
+    if not (coordinateIsOutOfBounds(x-1, y)):
+        if (Revealed_Cells[x-1][y] == 2):
+            count += 1
+    if not (coordinateIsOutOfBounds(x+1, y)):
+        if (Revealed_Cells[x+1][y] == 2):
+            count += 1
+    if not (coordinateIsOutOfBounds(x, y+1)):
+        if (Revealed_Cells[x][y+1] == 2):
+            count += 1
+    if not (coordinateIsOutOfBounds(x, y-1)):
+        if (Revealed_Cells[x][y-1] == 2):
+            count += 1
+    if not (coordinateIsOutOfBounds(x-1, y-1)):
+        if (Revealed_Cells[x-1][y-1] == 2):
+            count += 1
+    if not (coordinateIsOutOfBounds(x+1, y+1)):
+        if (Revealed_Cells[x+1][y+1] == 2):
+            count += 1
+    if not (coordinateIsOutOfBounds(x-1, y+1)):
+        if (Revealed_Cells[x-1][y+1] == 2):
+            count += 1
+    if not (coordinateIsOutOfBounds(x+1, y-1)):
+        if (Revealed_Cells[x+1][y-1] == 2):
+            count += 1
+    if (Minefield[x][y] == count):
+        return True
+    else:
+        return False
+""" 
+    Function that detects a doubleclick, if the grid is solved then it clicks all the non-revealed squares around it
+"""
+def doubleClick(pos):
+    mouse_x = pos[0]
+    mouse_y = pos[1]
+    mouse_y = mouse_y - MIN_SCREEN_HEIGHT
+    mouse_x = mouse_x // CELL_SIZE
+    mouse_y = mouse_y // CELL_SIZE
+    if (gridIsSolved(mouse_x, mouse_y)):
+        blankGridWasHit(mouse_x, mouse_y)
+        
 
 """ 
     Function that pulls apart the mouse input and assigns it to the correct function
@@ -301,6 +355,7 @@ def coordinateIsOutOfBounds(x, y):
     and then change the block colour and set the appropriate character
 """ 
 def gridClicked(x, y):
+    global GAME_STATE
     if (coordinateIsOutOfBounds(x, y)):
         return
     elif (coordinateIsRevealed(x, y)):
@@ -310,6 +365,8 @@ def gridClicked(x, y):
         grid = Minefield[x][y]
         if (grid > 8):
             mineWasHit(x, y, grid)
+            print ("mine")
+            GAME_STATE = "hit"
             return "mine"
         elif (grid == 0):
             blankGridWasHit(x, y)
@@ -366,10 +423,9 @@ def checkVictory():
         for y in range(0, GRID_SIZE): 
             if (Revealed_Cells[x][y] == 3 or Revealed_Cells[x][y] == 1):
                 unknown += 1
-    print (unknown)
     if (unknown == MINE_COUNT):
         print ("victory")
-        GAME_STATE == "victory"
+        GAME_STATE = "victory"
         return True
     else:
         return False
@@ -420,6 +476,7 @@ def startGame():
     TIMER = 1
     TIME = 0
     quitState = False
+    t1 = datetime.datetime.now()
 
     pygame.time.set_timer(TIMER, 1000)
     while loop==False:
@@ -433,7 +490,16 @@ def startGame():
                 elif event.type == pygame.MOUSEBUTTONUP:
                     pos = pygame.mouse.get_pos()
                     if event.button == 1:   # Left button click detected
-                        if (GAME_STATE == "hit"):
+                        t2 = t1
+                        t1 = datetime.datetime.now()
+                        mouse_x = pos[0]
+                        mouse_y = pos[1]
+                        mouse_y = mouse_y - MIN_SCREEN_HEIGHT
+                        mouse_x = mouse_x // CELL_SIZE
+                        mouse_y = mouse_y // CELL_SIZE
+                        if (((t1-t2).microseconds / 1000) < 300 and Revealed_Cells[mouse_x][mouse_y] == 0):
+                            doubleClick(pos)
+                        elif (GAME_STATE == "hit"):
                             quitState = titleScreen("new")
                             if (quitState == False):
                                 return False
