@@ -433,8 +433,24 @@ def showGame():
                 renderChar('*', black, x, y)
             elif (grid == 0):
                 renderChar(' ', black, x, y)
+            elif (grid == 1):
+                renderChar(grid, darkblue, x, y)
+            elif (grid == 2):
+                renderChar(grid, green, x, y)
+            elif (grid == 3):
+                renderChar(grid, red, x, y)
+            elif (grid == 4):
+                renderChar(grid, purple, x, y)
+            elif (grid == 5):
+                renderChar(grid, darkred, x, y)
+            elif (grid == 6):
+                renderChar(grid, iceblue, x, y)
+            elif (grid == 7):
+                renderChar(grid, black, x, y)
+            elif (grid == 8):
+                renderChar(grid, grey, x, y)
             else:
-                renderChar(grid, black, x, y)   
+                renderChar(grid, white, x, y)
                 
 """ 
     Check for a win
@@ -755,9 +771,7 @@ def main():
     screen.fill(blue)
     result = True
     while result == True:
-        result = titleScreen("new")
-        if result==False:
-            return               
+        titleScreen("new")              
     pygame.quit()
 
 if __name__ == '__main__':
