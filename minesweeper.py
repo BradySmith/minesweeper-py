@@ -7,10 +7,7 @@
             github.com/BradySmith
 """
 
-#TODO: Fix it so you can't hit a mine on your first try
 #TODO: Fix clock bug
-#TODO: Fix exit bug
-#TOD: Fix refresh bug so it stores marked squares
 
 import pygame
 import datetime
@@ -253,6 +250,12 @@ def refreshScreen():
                     blankGridWasHit(x, y)
                 else:
                     proximityGridWasHit(x, y)
+            elif (Revealed_Cells[x][y] == 3):
+                drawCells(x, y)
+                renderChar("?", black, x, y)
+            elif (Revealed_Cells[x][y] == 2):
+                drawCells(x, y)
+                renderChar("!", red, x, y)
             else:
                 pygame.draw.rect(screen, Cells_Colour[x][y], Cells_Rects[x][y])
     drawGrid()
@@ -291,6 +294,7 @@ def gridIsSolved(x, y):
         return True
     else:
         return False
+    
 """ 
     Function that detects a doubleclick, if the grid is solved then it clicks all the non-revealed squares around it
 """
@@ -301,8 +305,7 @@ def doubleClick(pos):
     mouse_x = mouse_x // CELL_SIZE
     mouse_y = mouse_y // CELL_SIZE
     if (gridIsSolved(mouse_x, mouse_y)):
-        blankGridWasHit(mouse_x, mouse_y)
-        
+        blankGridWasHit(mouse_x, mouse_y)        
 
 """ 
     Function that pulls apart the mouse input and assigns it to the correct function
@@ -328,6 +331,9 @@ def leftMouseButton(pos):
     on right button click
 """
 def rightMouseButton(pos):
+    global FIRST_CLICK
+    FIRST_CLICK = False
+    
     mouse_x = pos[0]
     mouse_y = pos[1]
     mouse_y = mouse_y - MIN_SCREEN_HEIGHT
@@ -355,23 +361,39 @@ def coordinateIsOutOfBounds(x, y):
     and then change the block colour and set the appropriate character
 """ 
 def gridClicked(x, y):
+    global Cells_Rects
+    global Cells_Colour
+    global Minefield
+    global Revealed_Cells    
     global GAME_STATE
+    global FIRST_CLICK
+    
     if (coordinateIsOutOfBounds(x, y)):
         return
     elif (coordinateIsRevealed(x, y)):
         return
+    
+    if (FIRST_CLICK == True):
+        while (Minefield[x][y] != 0):
+            Cells_Rects = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+            Cells_Colour = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+            Minefield = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+            Revealed_Cells = [[1 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+            intializeCells()
+            seedMines()
+            drawGrid()
+        FIRST_CLICK = False
+    
+    Revealed_Cells[x][y] = 0
+    grid = Minefield[x][y]
+    if (grid > 8):
+        mineWasHit(x, y, grid)
+        GAME_STATE = "hit"
+        return "mine"
+    elif (grid == 0):
+        blankGridWasHit(x, y)
     else:
-        Revealed_Cells[x][y] = 0
-        grid = Minefield[x][y]
-        if (grid > 8):
-            mineWasHit(x, y, grid)
-            print ("mine")
-            GAME_STATE = "hit"
-            return "mine"
-        elif (grid == 0):
-            blankGridWasHit(x, y)
-        else:
-            proximityGridWasHit(x, y)
+        proximityGridWasHit(x, y)
     if (checkVictory()):
         return "victory"
 
@@ -424,7 +446,6 @@ def checkVictory():
             if (Revealed_Cells[x][y] == 3 or Revealed_Cells[x][y] == 1):
                 unknown += 1
     if (unknown == MINE_COUNT):
-        print ("victory")
         GAME_STATE = "victory"
         return True
     else:
@@ -444,14 +465,16 @@ def startGame():
     global MAX_ROW_COUNT
     global size
     global screen
+    global GAME_STATE
+    global TIME
+    global FIRST_CLICK
     global Cells_Rects
     global Cells_Colour
     global Minefield
     global Revealed_Cells
-    global GAME_STATE
-    global TIME
-
     
+    FIRST_CLICK = True
+    GAME_STATE = "running"  
     MENU_BAR_WIDTH = GRID_SIZE * CELL_SIZE
     MAX_SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE + MENU_BAR_HEIGHT
     MIN_SCREEN_HEIGHT = MENU_BAR_HEIGHT
@@ -459,7 +482,6 @@ def startGame():
     MIN_SCREEN_WIDTH = 0
     MAX_COL_COUNT = GRID_SIZE - 1
     MAX_ROW_COUNT = GRID_SIZE - 1
-    GAME_STATE = "running"
     
     size = [MAX_SCREEN_WIDTH, MAX_SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
@@ -472,6 +494,7 @@ def startGame():
     intializeCells()
     seedMines()
     drawGrid()
+    
     loop = False
     TIMER = 1
     TIME = 0
@@ -489,7 +512,9 @@ def startGame():
                     return False
                 elif event.type == pygame.MOUSEBUTTONUP:
                     pos = pygame.mouse.get_pos()
-                    if event.button == 1:   # Left button click detected
+
+                    # Left button click detected
+                    if event.button == 1:   
                         t2 = t1
                         t1 = datetime.datetime.now()
                         mouse_x = pos[0]
@@ -497,6 +522,8 @@ def startGame():
                         mouse_y = mouse_y - MIN_SCREEN_HEIGHT
                         mouse_x = mouse_x // CELL_SIZE
                         mouse_y = mouse_y // CELL_SIZE
+                        
+                        # Check for a double click on a revealed square
                         if (((t1-t2).microseconds / 1000) < 300 and Revealed_Cells[mouse_x][mouse_y] == 0):
                             doubleClick(pos)
                         elif (GAME_STATE == "hit"):
@@ -526,17 +553,16 @@ def titleScreen(state):
     global GRID_SIZE
     
     title_width = 230
-    title_height = 250
-    
+    title_height = 250    
     button_width = 150
     button_height = 35
-    button_border = 6
-    
+    button_border = 6    
     border = 5
     
-    loop = False
     drawGrid()
     drawMenuBar(TIME)
+    
+    loop = False
     while loop==False:
         titleFont = pygame.font.Font('freesansbold.ttf', 25)
         buttonFont = pygame.font.Font('freesansbold.ttf', 18)
