@@ -395,6 +395,7 @@ def gridClicked(x, y):
     else:
         proximityGridWasHit(x, y)
     if (checkVictory()):
+        GAME_STATE = "victory"
         return "victory"
 
 """ 
