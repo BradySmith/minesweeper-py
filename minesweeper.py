@@ -316,7 +316,7 @@ def leftMouseButton(pos):
     mouse_y = pos[1]   
     if (mouse_x > MENU_BUTTON_X and mouse_x < (MENU_BUTTON_X + MENU_BUTTON_WIDTH) and mouse_y > MENU_BUTTON_Y and mouse_y < MENU_BUTTON_Y + MENU_BUTTON_HEIGHT):
         state = "pause"
-        titleScreen(state)
+        quitState = titleScreen(state)
         refreshScreen()
     mouse_y = mouse_y - MIN_SCREEN_HEIGHT
     mouse_x = mouse_x // CELL_SIZE
@@ -375,10 +375,10 @@ def gridClicked(x, y):
     
     if (FIRST_CLICK == True):
         while (Minefield[x][y] != 0):
-            Cells_Rects = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
-            Cells_Colour = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
-            Minefield = [[0 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
-            Revealed_Cells = [[1 for x in range(GRID_SIZE)] for x in range(GRID_SIZE)]
+            Cells_Rects = [[0 for i in range(GRID_SIZE)] for i in range(GRID_SIZE)]
+            Cells_Colour = [[0 for i in range(GRID_SIZE)] for i in range(GRID_SIZE)]
+            Minefield = [[0 for i in range(GRID_SIZE)] for i in range(GRID_SIZE)]
+            Revealed_Cells = [[1 for i in range(GRID_SIZE)] for i in range(GRID_SIZE)]
             intializeCells()
             seedMines()
             drawGrid()
@@ -524,6 +524,7 @@ def startGame():
         drawMenuBar(TIME)
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    GAME_STATE = "quit"
                     pygame.quit()
                     return False
                 elif event.type == pygame.MOUSEBUTTONUP:
@@ -550,6 +551,8 @@ def startGame():
                             result = leftMouseButton(pos)
                         if result == "mine":
                             GAME_STATE = "hit"
+                            if GAME_STATE == "quit":
+                                return False
                         if result == "victory":
                             GAME_STATE = "victory"
                             quitState = titleScreen("new")
@@ -557,8 +560,9 @@ def startGame():
                                 return False
                     elif event.button == 3: # Right button click detected
                         rightMouseButton(pos)
-        pygame.display.flip()
-        pygame.time.delay(100)
+        if GAME_STATE != "quit":
+            pygame.display.flip()
+            pygame.time.delay(100)
     return True
 
 """
@@ -567,6 +571,7 @@ def startGame():
 def titleScreen(state):
     global MINE_COUNT
     global GRID_SIZE
+    global GAME_STATE
     
     title_width = 230
     title_height = 250    
@@ -655,6 +660,7 @@ def titleScreen(state):
         screen.blit(text, textPos)
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    GAME_STATE = "quit"
                     pygame.quit()
                     return False
                 elif event.type == pygame.MOUSEBUTTONUP:
@@ -699,9 +705,12 @@ def titleScreen(state):
                             if (mouse_x > MENU_BUTTON_X and mouse_x < (MENU_BUTTON_X + MENU_BUTTON_WIDTH) 
                                 and mouse_y > MENU_BUTTON_Y and mouse_y < MENU_BUTTON_Y + MENU_BUTTON_HEIGHT):
                                 return True
-        pygame.display.flip()
-        pygame.time.delay(50)
-    startGame()
+        if GAME_STATE != "quit":
+            pygame.display.flip()
+            pygame.time.delay(50)
+    result = startGame()
+    if result == False:
+        return result
     return True
 
 """
